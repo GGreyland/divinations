@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Шатёр для гаданий</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,700;1,400&display=swap');
+
+        :root {
+            --lilac: #c8a2c8;
+            --lilac-glow: 0 0 15px rgba(200, 162, 200, 0.7);
+            --bg-overlay: rgba(15, 10, 20, 0.85);
+            --text-color: #e6dbe8;
+        }
+
+        /* ---------------------------------------------------
+           ССЫЛКА НА ФОН ВСТАВЛЯЕТСЯ СЮДА
+        --------------------------------------------------- */
+        body {
+            background-image: url('bg.jpg');
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'EB Garamond', serif;
+            background-color: #000;
+            background-size: cover;
+            background-position: center;
+            color: var(--text-color);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Убираем стандартный курсор для устройств с мышью */
+        @media (pointer: fine) {
+            *, body, html, canvas, button {
+                cursor: none !important;
+            }
+        }
+
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-overlay);
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 40px;
+        }
+
+        /* ЛЕВАЯ ПАНЕЛЬ - Инструкция */
+        .left-panel {
+            flex: 1;
+            padding: 20px;
+            background: rgba(30, 20, 40, 0.6);
+            border: 1px solid rgba(200, 162, 200, 0.3);
+            border-radius: 15px;
+            box-shadow: var(--lilac-glow);
+            backdrop-filter: blur(5px);
+            max-width: 250px;
+        }
+
+        .left-panel h2 {
+            text-align: center;
+            color: var(--lilac);
+            text-shadow: var(--lilac-glow);
+            font-size: 1.5rem;
+            margin-top: 0;
+        }
+
+        .left-panel ul {
+            list-style: none;
+            padding: 0;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .key {
+            display: inline-block;
+            background: rgba(200, 162, 200, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--lilac);
+            color: #fff;
+            margin-right: 5px;
+        }
+
+        /* ЦЕНТРАЛЬНАЯ ПАНЕЛЬ - Игра */
+        .center-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            color: #fff;
+            text-shadow: 0 0 10px #fff, 0 0 20px var(--lilac), 0 0 30px var(--lilac);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: var(--lilac);
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+
+        canvas {
+            background: rgba(10, 5, 15, 0.7);
+            border: 2px solid rgba(200, 162, 200, 0.5);
+            border-radius: 5px;
+            box-shadow: 0 0 30px rgba(200, 162, 200, 0.3);
+        }
+
+        .btn-restart {
+            margin-top: 20px;
+            padding: 10px 30px;
+            font-family: 'EB Garamond', serif;
+            font-size: 1.2rem;
+            color: #fff;
+            background: transparent;
+            border: 1px solid var(--lilac);
+            border-radius: 20px;
+            transition: 0.3s;
+            box-shadow: var(--lilac-glow);
+        }
+
+        .btn-restart:hover {
+            background: var(--lilac);
+            color: #000;
+        }
+
+        /* ПРАВАЯ ПАНЕЛЬ - Статистика */
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            max-width: 250px;
+        }
+
+        .score-box {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            text-shadow: var(--lilac-glow);
+        }
+
+        .score-val {
+            font-size: 2.5rem;
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .progress-container {
+            width: 100%;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid var(--lilac);
+            border-radius: 10px;
+            height: 15px;
+            overflow: hidden;
+            box-shadow: var(--lilac-glow);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #c8a2c8, #e0b0ff);
+            transition: width 0.3s;
+            box-shadow: 0 0 10px #fff;
+        }
+
+        .progress-label {
+            margin-bottom: 5px;
+            color: var(--lilac);
+        }
+
+        /* ПОДВАЛ */
+        .footer {
+            position: absolute;
+            bottom: 10px;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.3);
+            z-index: 2;
+        }
+
+        /* МОДАЛЬНОЕ ОКНО */
+        .modal {
+            display: none;
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(20, 10, 30, 0.95);
+            border: 2px solid var(--lilac);
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(200, 162, 200, 0.8);
+            z-index: 10;
+        }
+
+        .modal h2 {
+            font-size: 2.5rem;
+            margin-top: 0;
+            color: #fff;
+            text-shadow: var(--lilac-glow);
+        }
+
+        /* КАСТОМНЫЙ КУРСОР - Волшебная палочка */
+        #magic-cursor {
+            position: fixed;
+            top: 0; left: 0;
+            width: 32px; height: 32px;
+            pointer-events: none;
+            z-index: 10000;
+            will-change: transform;
+            animation: wand-glow 1.5s infinite alternate;
+        }
+
+        @keyframes wand-glow {
+            0% { filter: drop-shadow(0 0 3px var(--lilac)) drop-shadow(0 0 8px #fff); }
+            100% { filter: drop-shadow(0 0 12px var(--lilac)) drop-shadow(0 0 25px #fff) drop-shadow(0 0 35px #e0b0ff); }
+        }
+
+        /* Волшебные искры */
+        .magic-particle {
+            position: fixed;
+            width: 3px; height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            box-shadow: 0 0 8px var(--lilac), 0 0 12px #fff;
+            animation: particle-fade 1s forwards;
+        }
+
+        @keyframes particle-fade {
+            0% { transform: scale(1) translateY(0); opacity: 0.8; }
+            100% { transform: scale(0) translateY(-25px); opacity: 0; }
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 900px) {
+            .container { flex-direction: column; gap: 10px; padding-top: 10px; }
+            .left-panel { display: none; }
+            .right-panel {
+                flex-direction: row; justify-content: space-between;
+                width: 90%; max-width: 400px; align-items: center;
+            }
+            .score-box { margin-bottom: 0; font-size: 1.2rem; }
+            .score-val { font-size: 1.5rem; }
+            .progress-container { width: 150px; }
+            h1 { font-size: 1.8rem; }
+            .subtitle { font-size: 0.9rem; }
+            canvas { max-height: 55vh; width: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Кастомный курсор: Волшебная палочка -->
+<div id="magic-cursor">
+    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+        <line x1="8" y1="8" x2="26" y2="26" stroke="#c8a2c8" stroke-width="3" stroke-linecap="round"/>
+        <line x1="10" y1="10" x2="24" y2="24" stroke="#4a0e4e" stroke-width="1" stroke-linecap="round"/>
+        <path d="M8,0 L9.5,5.5 L15,7 L9.5,8.5 L8,14 L6.5,8.5 L1,7 L6.5,5.5 Z" fill="#fff" />
+        <circle cx="18" cy="4" r="1.5" fill="#e0b0ff" />
+        <circle cx="4" cy="18" r="1.5" fill="#e0b0ff" />
+    </svg>
+</div>
+
+<div class="overlay"></div>
+
+<div class="container">
+    <div class="left-panel">
+        <h2>Управление</h2>
+        <ul>
+            <li><span class="key">←</span> <span class="key">→</span> Сдвиг</li>
+            <li><span class="key">↑</span> Вращение</li>
+            <li><span class="key">↓</span> Вниз</li>
+            <li><span class="key">Пробел</span> Бросить вниз</li>
+            <br>
+            <li><b>Мышь / Сенсор:</b></li>
+            <li>Тап по краям — сдвиг</li>
+            <li>Свайп вверх — вращение</li>
+            <li>Свайп вниз — бросок</li>
+        </ul>
+    </div>
+
+    <div class="center-panel">
+        <div class="header">
+            <h1>Шатёр для гаданий</h1>
+            <div class="subtitle">Собери как можно больше предсказаний в шарах!</div>
+        </div>
+        <canvas id="gameCanvas" width="300" height="600"></canvas>
+        <button class="btn-restart" onclick="resetGame()">Начать заново</button>
+    </div>
+
+    <div class="right-panel">
+        <div class="score-box">
+            Баллы:<br>
+            <span class="score-val" id="score">0</span>
+        </div>
+        <div>
+            <div class="progress-label">Энергия ритуала</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="footer">
+    Роберту Эверли с подарок от Грэйс Грейлэнд, 2026
+</div>
+
+<div class="modal" id="gameOverModal">
+    <h2>Сеанс окончен</h2>
+    <p style="font-size: 1.5rem;">Ваш результат: <span id="finalScore" style="color: var(--lilac); font-weight: bold;">0</span> баллов</p>
+    <button class="btn-restart" onclick="resetGame()">Начать новый сеанс</button>
+</div>
+
+<script>
+    /* ----- ЛОГИКА ВОЛШЕБНОГО КУРСОРА ----- */
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const magicCursor = document.getElementById('magic-cursor');
+    let lastParticleTime = 0;
+
+    if (!isTouchDevice) {
+        document.addEventListener('mousemove', (e) => {
+            // Центр звездочки у курсора находится на координатах примерно (8, 7) внутри SVG
+            magicCursor.style.transform = `translate(${e.clientX - 8}px, ${e.clientY - 7}px)`;
+
+            // Создание искр при движении
+            const now = Date.now();
+            if (now - lastParticleTime > 40) {
+                createMagicParticle(e.clientX, e.clientY);
+                lastParticleTime = now;
+            }
+        });
+    } else {
+        magicCursor.style.display = 'none'; // Скрываем на телефонах
+    }
+
+    function createMagicParticle(x, y) {
+        const particle = document.createElement('div');
+        particle.className = 'magic-particle';
+        // Случайный разброс пыльцы
+        particle.style.left = (x + (Math.random() * 16 - 8)) + 'px';
+        particle.style.top = (y + (Math.random() * 16 - 8)) + 'px';
+        document.body.appendChild(particle);
+
+        setTimeout(() => particle.remove(), 1000);
+    }
+
+    /* ----- ЛОГИКА ИГРЫ ----- */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const progressBar = document.getElementById('progressBar');
+    const modal = document.getElementById('gameOverModal');
+    const finalScoreElement = document.getElementById('finalScore');
+
+    const ROWS = 20;
+    const COLS = 10;
+    const BLOCK_SIZE = 30;
+    
+    // Элементы игры
+    const ITEMS = {
+        0: null,
+        1: { symbol: '🔮', color: '#00ffff', points: 50 },
+        2: { symbol: '☕', color: '#ffcf33', points: 30 },
+        3: { symbol: '🃏', color: '#ff00ff', points: 40 }
+    };
+
+    const SHAPES = [
+        [],
+        [[1, 1, 1, 1]], 
+        [[2, 0, 0], [2, 2, 2]], 
+        [[0, 0, 2], [2, 2, 2]], 
+        [[1, 1], [1, 1]], 
+        [[0, 3, 3], [3, 3, 0]], 
+        [[0, 3, 0], [3, 3, 3]], 
+        [[3, 3, 0], [0, 3, 3]]  
+    ];
+
+    let board = [];
+    let piece = null;
+    let score = 0;
+    let level = 1;
+    let linesClearedTotal = 0;
+    let dropCounter = 0;
+    let dropInterval = 1000;
+    let lastTime = 0;
+    let isGameOver = false;
+    let animatingRows = [];
+
+    function createBoard() {
+        return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+    }
+
+    function spawnPiece() {
+        const typeId = Math.floor(Math.random() * 7) + 1;
+        const matrix = SHAPES[typeId];
+        piece = {
+            matrix: matrix,
+            x: Math.floor(COLS / 2) - Math.floor(matrix[0].length / 2),
+            y: 0
+        };
+
+        if (collide(board, piece)) gameOver();
+    }
+
+    function drawBlock(x, y, value, alpha = 1) {
+        if (value === 0) return;
+        const item = ITEMS[value];
+        ctx.globalAlpha = alpha;
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = item.color;
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(item.symbol, x * BLOCK_SIZE + BLOCK_SIZE/2, y * BLOCK_SIZE + BLOCK_SIZE/2 + 2);
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        board.forEach((row, y) => row.forEach((value, x) => drawBlock(x, y, value)));
+
+        if (piece && !isGameOver) {
+            piece.matrix.forEach((row, y) => {
+                row.forEach((value, x) => {
+                    if (value !== 0) drawBlock(piece.x + x, piece.y + y, value);
+                });
+            });
+        }
+
+        if (animatingRows.length > 0) {
+            ctx.fillStyle = `rgba(200, 162, 200, ${Math.random() * 0.5 + 0.3})`;
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#fff';
+            animatingRows.forEach(y => {
+                ctx.fillRect(0, y * BLOCK_SIZE, canvas.width, BLOCK_SIZE);
+            });
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    function collide(board, piece) {
+        for (let y = 0; y < piece.matrix.length; y++) {
+            for (let x = 0; x < piece.matrix[y].length; x++) {
+                if (piece.matrix[y][x] !== 0 &&
+                    (board[piece.y + y] && board[piece.y + y][piece.x + x]) !== 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    function merge(board, piece) {
+        piece.matrix.forEach((row, y) => {
+            row.forEach((value, x) => {
+                if (value !== 0) board[piece.y + y][piece.x + x] = value;
+            });
+        });
+    }
+
+    function rotate(matrix) {
+        return matrix[0].map((val, index) => matrix.map(row => row[index]).reverse());
+    }
+
+    function sweep() {
+        let rowsToClear = [];
+        let pointsToAdd = 0;
+
+        outer: for (let y = board.length - 1; y >= 0; y--) {
+            for (let x = 0; x < board[y].length; x++) {
+                if (board[y][x] === 0) continue outer;
+            }
+            rowsToClear.push(y);
+            board[y].forEach(val => pointsToAdd += ITEMS[val].points);
+        }
+
+        if (rowsToClear.length > 0) {
+            pointsToAdd += rowsToClear.length * 100;
+            score += pointsToAdd;
+            scoreElement.innerText = score;
+            linesClearedTotal += rowsToClear.length;
+            updateProgress();
+
+            animatingRows = rowsToClear;
+            setTimeout(() => {
+                animatingRows = [];
+                rowsToClear.forEach(y => {
+                    board.splice(y, 1);
+                    board.unshift(Array(COLS).fill(0));
+                });
+            }, 300);
+        }
+    }
+
+    function updateProgress() {
+        const linesForNextLevel = 10;
+        let progress = (linesClearedTotal % linesForNextLevel) / linesForNextLevel * 100;
+        progressBar.style.width = progress + '%';
+
+        if (linesClearedTotal > 0 && linesClearedTotal % linesForNextLevel === 0) {
+            level++;
+            dropInterval = Math.max(100, 1000 - (level * 100));
+        }
+    }
+
+    function playerDrop() {
+        piece.y++;
+        if (collide(board, piece)) {
+            piece.y--;
+            merge(board, piece);
+            spawnPiece();
+            sweep();
+        }
+        dropCounter = 0;
+    }
+
+    function playerMove(dir) {
+        piece.x += dir;
+        if (collide(board, piece)) piece.x -= dir;
+    }
+
+    function playerRotate() {
+        const pos = piece.x;
+        let offset = 1;
+        piece.matrix = rotate(piece.matrix);
+        while (collide(board, piece)) {
+            piece.x += offset;
+            offset = -(offset + (offset > 0 ? 1 : -1));
+            if (offset > piece.matrix[0].length) {
+                piece.matrix = rotate(rotate(rotate(piece.matrix)));
+                piece.x = pos;
+                return;
+            }
+        }
+    }
+
+    function hardDrop() {
+        while (!collide(board, piece)) piece.y++;
+        piece.y--;
+        merge(board, piece);
+        spawnPiece();
+        sweep();
+        dropCounter = 0;
+    }
+
+    document.addEventListener('keydown', event => {
+        if (isGameOver) return;
+        switch (event.keyCode) {
+            case 37: playerMove(-1); break;
+            case 39: playerMove(1); break;
+            case 40: playerDrop(); break;
+            case 38: playerRotate(); break;
+            case 32: hardDrop(); break;
+        }
+    });
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    
+    canvas.addEventListener('mousedown', handlePointerDown);
+    canvas.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        handlePointerDown(e.touches[0]);
+    }, {passive: false});
+
+    canvas.addEventListener('touchend', (e) => {
+        if(isGameOver) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+
+        if (Math.abs(dx) <= Math.abs(dy)) {
+            if (dy > 50) hardDrop();
+            else if (dy < -50) playerRotate();
+        }
+        e.preventDefault();
+    }, {passive: false});
+
+    function handlePointerDown(e) {
+        if (isGameOver) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        if (x < canvas.width / 3) playerMove(-1);
+        else if (x > canvas.width * 2/3) playerMove(1);
+    }
+
+    function gameOver() {
+        isGameOver = true;
+        modal.style.display = 'block';
+        finalScoreElement.innerText = score;
+    }
+
+    function resetGame() {
+        board = createBoard();
+        score = 0;
+        level = 1;
+        linesClearedTotal = 0;
+        dropInterval = 1000;
+        scoreElement.innerText = score;
+        progressBar.style.width = '0%';
+        isGameOver = false;
+        modal.style.display = 'none';
+        spawnPiece();
+        update();
+    }
+
+    function update(time = 0) {
+        if (isGameOver) return;
+        const deltaTime = time - lastTime;
+        lastTime = time;
+        dropCounter += deltaTime;
+
+        if (dropCounter > dropInterval && animatingRows.length === 0) {
+            playerDrop();
+        }
+
+        draw();
+        requestAnimationFrame(update);
+    }
+
+    board = createBoard();
+    spawnPiece();
+    update();
+
+</script>
+</body>
+</html>
